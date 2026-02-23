@@ -1,47 +1,57 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import * as BooksAPI from "../BooksAPI";
+import PropTypes from "prop-types";
 import Books from "./Books";
 
 function SearchPage({ books, updateShelf }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
 
-  const handleSearch = async (value) => {
-    setQuery(value);
+ useEffect(() => {
+   const timer = setTimeout(async () => {
+     if (!query.trim()) {
+       setResults([]);
+       return;
+     }
 
-    if (value.trim() === "") {
-      setResults([]);
-      return;
-    }
+     try {
+       const data = await BooksAPI.search(query, 20);
 
-    const data = await BooksAPI.search(value, 20);
+       if (!data || data.error) {
+         setResults([]);
+         return;
+       }
 
-    if (data && !data.error) {
-      const updatedResults = data.map((result) => {
-        const existing = books.find((b) => b.id === result.id);
-        return existing ? existing : { ...result, shelf: "none" };
-      });
+       const merged = data.map((result) => {
+         const existing = books.find((b) => b.id === result.id);
 
-      setResults(updatedResults);
-    } else {
-      setResults([]);
-    }
-  };
+         return existing ? existing : { ...result, shelf: "none" };
+       });
+
+       setResults(merged);
+     } catch (error) {
+       setResults([]);
+     }
+   }, 400);
+
+   return () => clearTimeout(timer);
+ }, [query, books]);
+
 
   return (
     <div className="search-books">
       <div className="search-books-bar">
-        <Link className="close-search" to="/">
+        <Link to="/" className="close-search">
           Close
         </Link>
 
         <div className="search-books-input-wrapper">
           <input
             type="text"
-            placeholder="Search by title, author, or ISBN"
             value={query}
-            onChange={(e) => handleSearch(e.target.value)}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search by title, author, or ISBN"
           />
         </div>
       </div>
@@ -49,17 +59,19 @@ function SearchPage({ books, updateShelf }) {
       <div className="search-books-results">
         <ol className="books-grid">
           {results.map((book) => (
-            <Books
-              key={book.id}
-              book={book}
-              updateShelf={updateShelf}
-              fromSearch="fromSearch"
-            />
+            <li key={book.id}>
+              <Books book={book} updateShelf={updateShelf} />
+            </li>
           ))}
         </ol>
       </div>
     </div>
   );
 }
+
+SearchPage.propTypes = {
+  books: PropTypes.array.isRequired,
+  updateShelf: PropTypes.func.isRequired,
+};
 
 export default SearchPage;

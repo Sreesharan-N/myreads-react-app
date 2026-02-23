@@ -1,44 +1,43 @@
 import "./App.css";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import * as BooksAPI from "./BooksAPI";
-
 import { Route, Routes } from "react-router-dom";
 import MainPage from "./components/MainPage";
 import SearchPage from "./components/SearchPage";
 
 function App() {
-  const [books,setBooks] = useState([]);
+  const [books, setBooks] = useState([]);
 
-  useEffect(()=>{
-    const fetchAllBooks=async ()=>{
-      try{
-        const books = await BooksAPI.getAll();
-        setBooks(books);
+  useEffect(() => {
+    const fetchAllBooks = async () => {
+      try {
+        const data = await BooksAPI.getAll();
+        setBooks(data);
+      } catch (error) {
+        console.error("Error fetching books:", error);
       }
-      catch(error){
-        console.error("Error in fetching the books details : ",error);
-      }
-    }
+    };
 
     fetchAllBooks();
-  },[]);
+  }, []);
 
-  const updateShelf=async (book,shelf)=>{
-    await BooksAPI.update(book,shelf);
+  const updateShelf = useCallback(async (book, shelf) => {
+    await BooksAPI.update(book, shelf);
 
-    setBooks((prevBooks)=>{
-      const existing = prevBooks.find((b)=>b.id===book.id);
+    setBooks((prevBooks) => {
+      const exists = prevBooks.find((b) => b.id === book.id);
 
-      if(existing){
-        return prevBooks.map((b)=>
-        b.id===book.id?{...b,shelf}:b
-      );
+      if (exists) {
+        if (shelf === "none") {
+          return prevBooks.filter((b) => b.id !== book.id);
+        }
+
+        return prevBooks.map((b) => (b.id === book.id ? { ...b, shelf } : b));
       }
-      else{
-        return [...prevBooks,{...book,shelf}];
-      }
+
+      return [...prevBooks, { ...book, shelf }];
     });
-  };
+  }, []);
 
   return (
     <Routes>

@@ -1,10 +1,10 @@
-import React from 'react';
+import React from "react";
+import PropTypes from "prop-types";
 
-export default function Books({book,updateShelf,fromSearch}) {
+const Books = React.memo(({ book, updateShelf }) => {
+  const hasShelf = book.shelf && book.shelf !== "none";
 
-    const hasShelf = !!book.shelf && book.shelf!=="none";
-    const dropDownHeader = fromSearch ? (hasShelf ? "Move to":"Add to"):"Move to";
-    const selectValue = hasShelf ? book.shelf : "move";
+  const dropDownHeader = hasShelf ? "Move to..." : "Add to...";
 
   return (
     <div className="book">
@@ -17,24 +17,37 @@ export default function Books({book,updateShelf,fromSearch}) {
             backgroundImage: `url(${book.imageLinks?.thumbnail || ""})`,
           }}
         ></div>
+
         <div className="book-shelf-changer">
           <select
-            value={selectValue}
+            value={book.shelf || "none"}
             onChange={(e) => updateShelf(book, e.target.value)}
           >
             <option value="move" disabled>
               {dropDownHeader}
             </option>
+
             <option value="currentlyReading">Currently Reading</option>
+
             <option value="wantToRead">Want to Read</option>
+
             <option value="read">Read</option>
-            {!fromSearch && <option value="none">None</option>}
-            {fromSearch && hasShelf && <option value="none">None</option>}
+
+            <option value="none">None</option>
           </select>
         </div>
       </div>
+
       <div className="book-title">{book.title}</div>
-      <div className="book-authors">{book.authors?.join(",")}</div>
+
+      <div className="book-authors">{book.authors?.join(", ")}</div>
     </div>
   );
-}
+});
+
+Books.propTypes = {
+  book: PropTypes.object.isRequired,
+  updateShelf: PropTypes.func.isRequired,
+};
+
+export default Books;
